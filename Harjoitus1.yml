@@ -1,4 +1,12 @@
-AWSTemplateFormatVersion: 2010-09-2019
+AWSTemplateFormatVersion: 2010-09-09
 Description: academy Demo CloudFormation
-MyS3Bucket:
+Resources:
+  MyS3Bucket:
     Type: AWS::S3::Bucket
+    Properties:
+        BucketName: pasi-bucket271
+
+  SqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: pasi-jono
