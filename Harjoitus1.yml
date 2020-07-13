@@ -1,0 +1,4 @@
+AWSTemplateFormatVersion: 2010-09-2019
+Description: academy Demo CloudFormation
+MyS3Bucket:
+    Type: AWS::S3::Bucket
