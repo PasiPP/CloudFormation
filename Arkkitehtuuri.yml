@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Pasi Demo CloudFormation
+
+Parameters:
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: PasiVPC
+
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: Public1
+      VpcId: vpc-07f0346360e997465
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: Private1
+      VpcId: vpc-07f0346360e997465
+
+  Subnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: Private2
+      VpcId: vpc-07f0346360e997465
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiInternetGW
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiEIP
+
+  NAT:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: eipalloc-0ce333839d6362075
+      SubnetId: subnet-0eedfdf35f2cefd61
+      Tags:
+        - Key: Name
+          Value: PasiNAT99
+
