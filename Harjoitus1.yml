@@ -10,15 +10,62 @@ Resources:
   MyS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-        BucketName: pasi-bucket271
+        BucketName: pasi-bucket2712
 
   SqsQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: pasi-jono
+      QueueName: pasi-jono-1
 
-  Instance:
+  EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
       InstanceType: t2.micro
       ImageId: !Ref LatestAmiId
+      Tags:
+        - Key: "Name"
+          Value: "pasi-ec2"
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: secu-gruuppi
+      GroupName: pasi-security-group2
+      VpcId: vpc-bc8f6cc1
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - subnet-2f0cdc70
+        - subnet-94bf68f2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+
+#  Listeners:
+    #          InstancePort: '80'
+    #          Protocol: HTTP
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security group
+      GroupName: pasi-security-group3
+      VpcId: vpc-bc8f6cc1
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
