@@ -15,7 +15,6 @@ Resources:
       Tags:
         - Key: Name
           Value: PasiVPC
-
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -23,7 +22,7 @@ Resources:
       Tags:
         - Key: Name
           Value: Public1
-      VpcId: vpc-07f0346360e997465
+      VpcId: !Ref VPC
 
   Subnet2:
     Type: AWS::EC2::Subnet
@@ -32,7 +31,7 @@ Resources:
       Tags:
         - Key: Name
           Value: Private1
-      VpcId: vpc-07f0346360e997465
+      VpcId: !Ref VPC
 
   Subnet3:
     Type: AWS::EC2::Subnet
@@ -41,7 +40,7 @@ Resources:
       Tags:
         - Key: Name
           Value: Private2
-      VpcId: vpc-07f0346360e997465
+      VpcId: !Ref VPC
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -60,9 +59,74 @@ Resources:
   NAT:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: eipalloc-0ce333839d6362075
-      SubnetId: subnet-0eedfdf35f2cefd61
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      SubnetId: !Ref Subnet1
       Tags:
         - Key: Name
           Value: PasiNAT99
 
+  RouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiRouteTable1
+      VpcId: !Ref VPC
+
+  RouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiRouteTable2
+      VpcId: !Ref VPC
+
+  RouteTable3:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiRouteTable3
+      VpcId: !Ref VPC
+
+  Route1:
+    Type: AWS::EC2::Route
+    Properties:
+      GatewayId: !Ref InternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable1
+
+  Route2:
+    Type: AWS::EC2::Route
+    Properties:
+      NatGatewayId: !Ref NAT
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable2
+
+  Route3:
+    Type: AWS::EC2::Route
+    Properties:
+      NatGatewayId: !Ref NAT
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable3
+
+  SubnetRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable1
+      SubnetId:
+        Ref: Subnet1
+
+  SubnetRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable2
+      SubnetId:
+        Ref: Subnet2
+
+  SubnetRouteTableAssociation3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable3
+      SubnetId:
+        Ref: Subnet3
