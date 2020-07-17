@@ -20,6 +20,10 @@ Resources:
             FromPort: 22
             ToPort: 22
             CidrIp: 0.0.0.0/0
+          - FromPort: 80
+            ToPort: 80
+            IpProtocol: Tcp
+            CidrIp: 0.0.0.0/0
 
   EC2Instance:
     Type: AWS::EC2::Instance
@@ -31,9 +35,31 @@ Resources:
       Tags:
         - Key: "Owner"
           Value: !Ref OmaNimi
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - "\n"
+            - - "#!/bin/bash"
+              - "amazon-linux-extras install epel"
+              - "amazon-linux-extras install nginx1"
+              - "systemctl start nginx"
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: pasibucket
+      Tags:
+        - Key: "Owner"
+          Value: !Ref OmaNimi
+
+  Arn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !GetAtt S3Bucket.Arn
+
 
 Outputs:
   PublicDnsName:
     Description: DNS
     Value: !Ref EC2Instance
-
