@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Pasi Demo Checkpoint3
+
+Parameters:
+  OmaNimi:
+    Type: String
+    Default: Pasi
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+  InstanceSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: PasinSecurityGroup
+        GroupDescription: Security Group
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      InstanceType: t2.nano
+      ImageId: !Ref LatestAmiId
+      Tags:
+        - Key: "Owner"
+          Value: !Ref OmaNimi
+
+Outputs:
+  PublicDnsName:
+    Description: DNS
+    Value: !Ref EC2Instance
+
