@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: PasiStackCP4
+
+Parameters:
+
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+  Keypair:
+    Type: String
+    Default: pasi-key-pair
+  Port1:
+    Type: Number
+    Default: 80
+  Port2:
+    Type: Number
+    Default: 22
+
+Resources:
+
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      KeyName: !Ref Keypair
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !Ref MySecurityGroup
+      SubnetId: !Ref MyPublicSubnet
+      IamInstanceProfile: !Ref MyIAMInstanceProfile
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - "\n"
+            - - "#!/bin/bash"
+              - "Sudo su"
+              - "yum update -y"
+              - "yum install -y httpd.x86_64"
+              - "systemctl start httpd.service"
+              - "systemctl enable httpd.service"
+              - "echo 'Hello World' > /var/www/html/index.html"
+      Tags:
+        - Key: Name
+          Value: PasiEc2
+
+  MyIAMPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: Allow-SSM-getParameter-and-full-S3
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:*'
+            Resource: '*'
+          - Effect: Allow
+            Action: 'ssm:GetParameter'
+            Resource: '*'
+      Roles:
+      - !Ref MyInstanceRole
+
+  MyInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MyInstanceRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  MyIAMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: MyInstanceProfile
+      Roles:
+        - !Ref MyInstanceRole
+
+  MySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for EC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref Port1
+          ToPort: !Ref Port1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: !Ref Port2
+          ToPort: !Ref Port2
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref PasiVPC
+      Tags:
+        - Key: Owner
+          Value: Pasi
+
+
+  PasiVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: PasiVPC
+
+  MyPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: PasiVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: "eu-east-1a"
+      Tags:
+        - Key: Name
+          Value: PasiSub
+      MapPublicIpOnLaunch: true
+
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: PasiIG
+
+  MyGatewayAttachmentforVPC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: PasiVPC
+      InternetGatewayId:
+        Ref: MyInternetGateway
+
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: PasiVPC
+      Tags:
+        - Key: Name
+          Value: PasiRoute
+
+  MyRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: MyRouteTable
+      GatewayId:
+        Ref: MyInternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: MyPublicSubnet
+      RouteTableId:
+        Ref: MyRouteTable
